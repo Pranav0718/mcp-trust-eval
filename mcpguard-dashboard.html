@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCPGuard — MCP Server Security Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #0b0e12;
+  --surface:   #12161c;
+  --surface2:  #1a1f28;
+  --surface3:  #212734;
+  --border:    #262d3a;
+  --border2:   #2e3748;
+  --red:       #e8251a;
+  --red-dim:   #7a1310;
+  --red-glow:  rgba(232,37,26,0.12);
+  --orange:    #e85f1a;
+  --yellow:    #f0a500;
+  --green:     #2db87a;
+  --blue:      #3b8fd4;
+  --text:      #dce3ed;
+  --text2:     #a8b4c4;
+  --muted:     #66768a;
+  --dim:       #3a4555;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* NOISE OVERLAY */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.4;
+}
+
+a { text-decoration: none; color: inherit; }
+
+/* ═══════════════════════════════
+   NAV
+═══════════════════════════════ */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(11,14,18,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  max-width: 1280px; margin: 0 auto;
+  padding: 0 32px;
+  height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 10px;
+}
+.nav-logo-mark {
+  width: 32px; height: 32px;
+  background: var(--red);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  color: white;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.nav-logo-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.nav-logo-text span { color: var(--red); }
+.nav-links {
+  display: flex; gap: 32px; list-style: none;
+}
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  transition: color 0.2s;
+  text-transform: uppercase;
+}
+.nav-links a:hover { color: var(--text); }
+.nav-cta {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 20px;
+  background: var(--red);
+  color: white;
+  transition: background 0.2s;
+}
+.nav-cta:hover { background: #c41e14; }
+
+/* ═══════════════════════════════
+   HERO
+═══════════════════════════════ */
+.hero {
+  position: relative;
+  padding: 100px 32px 80px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -200px; right: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(232,37,26,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-inner { max-width: 1280px; margin: 0 auto; }
+
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--red);
+  background: var(--red-glow);
+  border: 1px solid rgba(232,37,26,0.25);
+  padding: 5px 14px;
+  margin-bottom: 28px;
+}
+.hero-eyebrow::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--red);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+.hero-grid { display: grid; grid-template-columns: 1fr 400px; gap: 80px; align-items: center; }
+
+h1 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(42px, 5.5vw, 72px);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  color: var(--text);
+}
+h1 .red { color: var(--red); }
+
+.hero-desc {
+  font-size: 16px;
+  color: var(--text2);
+  max-width: 520px;
+  line-height: 1.75;
+  margin-bottom: 36px;
+  font-weight: 300;
+}
+
+.hero-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.btn-primary {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 12px 28px;
+  background: var(--red);
+  color: white;
+  border: none; cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  display: inline-block;
+}
+.btn-primary:hover { background: #c41e14; transform: translateY(-1px); }
+.btn-ghost {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 11px 28px;
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid var(--border2);
+  transition: border-color 0.2s, color 0.2s;
+  display: inline-block;
+}
+.btn-ghost:hover { border-color: var(--text2); color: var(--text); }
+
+/* HERO STATS CARD */
+.hero-stats-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 28px;
+}
+.stats-card-header {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.stats-rows { display: flex; flex-direction: column; gap: 0; }
+.stat-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-row-label { font-size: 13px; color: var(--text2); }
+.stat-row-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px; font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.v-red { color: var(--red); }
+.v-orange { color: var(--orange); }
+.v-yellow { color: var(--yellow); }
+.v-green { color: var(--green); }
+.v-blue { color: var(--blue); }
+
+/* ═══════════════════════════════
+   SECTION WRAPPER
+═══════════════════════════════ */
+.section { padding: 72px 32px; border-bottom: 1px solid var(--border); }
+.section-inner { max-width: 1280px; margin: 0 auto; }
+
+.section-header { margin-bottom: 40px; }
+.section-label {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 8px;
+}
+h2 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 32px; font-weight: 700;
+  letter-spacing: 0.02em; text-transform: uppercase;
+  color: var(--text);
+}
+
+/* ═══════════════════════════════
+   OVERVIEW METRICS
+═══════════════════════════════ */
+.metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+.metric-cell {
+  background: var(--surface);
+  padding: 24px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.metric-cell::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--border2);
+}
+.metric-cell.danger::before { background: var(--red); }
+.metric-cell.warn::before { background: var(--yellow); }
+.metric-cell.info::before { background: var(--blue); }
+.metric-cell.ok::before { background: var(--green); }
+.metric-cell.neutral::before { background: var(--muted); }
+
+.metric-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 40px; font-weight: 700;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.metric-label {
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.metric-sub { font-size: 12px; color: var(--dim); }
+
+/* ═══════════════════════════════
+   SCAN RESULTS TABLE
+═══════════════════════════════ */
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+  margin-bottom: 32px;
+}
+.results-table th {
+  background: var(--surface2);
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted);
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.results-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  font-size: 13px;
+}
+.results-table tr:last-child td { border-bottom: none; }
+.results-table tr { background: var(--surface); transition: background 0.15s; }
+.results-table tr:hover { background: var(--surface2); cursor: pointer; }
+
+.repo-name {
+  font-weight: 600; color: var(--text);
+  display: block; margin-bottom: 2px;
+}
+.repo-lang {
+  font-size: 11px; color: var(--muted);
+}
+.score-cell {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px; font-weight: 700;
+  white-space: nowrap;
+}
+.verdict-pill {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 4px 10px;
+  white-space: nowrap;
+  display: inline-block;
+}
+.pill-high { background: rgba(232,37,26,0.12); color: var(--red); border: 1px solid rgba(232,37,26,0.3); }
+.pill-medium { background: rgba(240,165,0,0.12); color: var(--yellow); border: 1px solid rgba(240,165,0,0.3); }
+.pill-low { background: rgba(45,184,122,0.12); color: var(--green); border: 1px solid rgba(45,184,122,0.3); }
+
+.mini-findings { display: flex; gap: 6px; flex-wrap: wrap; }
+.mf {
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px;
+  letter-spacing: 0.04em;
+}
+.mf-c { background: rgba(232,37,26,0.15); color: var(--red); }
+.mf-h { background: rgba(240,165,0,0.12); color: var(--yellow); }
+.mf-m { background: rgba(59,143,212,0.12); color: var(--blue); }
+.mf-l { background: rgba(102,118,138,0.12); color: var(--muted); }
+
+.expand-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 11px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.expand-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* DETAIL PANEL */
+.detail-row { display: none; }
+.detail-row.open { display: table-row; }
+.detail-panel {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 28px 32px;
+}
+.detail-grid { display: grid; grid-template-columns: 1fr 340px; gap: 32px; }
+
+.findings-table { width: 100%; border-collapse: collapse; }
+.findings-table tr { border-bottom: 1px solid var(--border); }
+.findings-table tr:last-child { border-bottom: none; }
+.findings-table td { padding: 10px 12px; font-size: 13px; vertical-align: top; }
+.findings-table tr:nth-child(odd) td { background: var(--surface); }
+
+.sev-badge {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 8px; white-space: nowrap;
+  display: inline-block;
+}
+.sev-c { background: var(--red); color: white; }
+.sev-h { background: var(--yellow); color: #000; }
+.sev-m { background: var(--blue); color: white; }
+.sev-l { background: var(--dim); color: var(--text2); }
+
+.finding-name { font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.finding-file { font-size: 11px; color: var(--muted); font-family: monospace; }
+
+/* BREAKDOWN PANEL */
+.breakdown-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 20px;
+}
+.bp-title {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted);
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.bp-rows { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.bp-row { }
+.bp-row-top {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--text2);
+  margin-bottom: 5px;
+}
+.bp-row-top span:last-child { color: var(--red); font-weight: 600; }
+.bp-bar { height: 3px; background: var(--border); overflow: hidden; }
+.bp-fill { height: 100%; transition: width 0.8s ease; }
+
+.threat-box {
+  background: rgba(232,37,26,0.05);
+  border: 1px solid rgba(232,37,26,0.2);
+  padding: 14px 16px;
+  margin-top: 16px;
+}
+.threat-box-title {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.threat-box p {
+  font-size: 13px; color: var(--text2);
+  line-height: 1.75; font-weight: 300;
+}
+
+/* ═══════════════════════════════
+   HOW IT WORKS
+═══════════════════════════════ */
+.checks-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+.check-tile {
+  background: var(--surface);
+  padding: 32px 24px;
+  position: relative;
+}
+.check-tile:hover { background: var(--surface2); }
+.check-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 48px; font-weight: 700;
+  color: var(--border2);
+  line-height: 1;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+.check-icon {
+  font-size: 22px; margin-bottom: 12px; display: block;
+}
+.check-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 17px; font-weight: 700;
+  letter-spacing: 0.03em; text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.check-desc { font-size: 13px; color: var(--text2); line-height: 1.7; font-weight: 300; }
+.check-tile-bar {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+
+/* ═══════════════════════════════
+   ATTACK CLASSES
+═══════════════════════════════ */
+.attacks-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--border); border: 1px solid var(--border);
+}
+.attack-card {
+  background: var(--surface); padding: 24px;
+}
+.attack-card:hover { background: var(--surface2); }
+.attack-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text); margin-bottom: 8px;
+}
+.attack-badge {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 2px 8px;
+  background: rgba(232,37,26,0.12);
+  color: var(--red);
+  border: 1px solid rgba(232,37,26,0.25);
+  display: inline-block; margin-bottom: 12px;
+}
+.attack-desc { font-size: 13px; color: var(--text2); line-height: 1.7; font-weight: 300; }
+
+/* ═══════════════════════════════
+   FOOTER
+═══════════════════════════════ */
+footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 32px;
+}
+.footer-inner {
+  max-width: 1280px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 16px;
+}
+.footer-logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px; font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.footer-logo span { color: var(--red); }
+.footer-meta { font-size: 12px; color: var(--muted); }
+.footer-link { color: var(--blue); transition: color 0.2s; }
+.footer-link:hover { color: var(--text); }
+
+/* ═══════════════════════════════
+   ANIMATIONS
+═══════════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.anim { opacity: 0; animation: fadeUp 0.5s ease forwards; }
+.a1 { animation-delay: 0.05s; }
+.a2 { animation-delay: 0.15s; }
+.a3 { animation-delay: 0.25s; }
+.a4 { animation-delay: 0.35s; }
+
+/* ═══════════════════════════════
+   RESPONSIVE
+═══════════════════════════════ */
+@media (max-width: 1024px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-stats-card { display: none; }
+  .checks-grid { grid-template-columns: 1fr 1fr; }
+  .metrics-strip { grid-template-columns: repeat(3, 1fr); }
+  .attacks-grid { grid-template-columns: 1fr 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .nav-links { display: none; }
+  h1 { font-size: 38px; }
+  .checks-grid { grid-template-columns: 1fr; }
+  .metrics-strip { grid-template-columns: 1fr 1fr; }
+  .attacks-grid { grid-template-columns: 1fr; }
+  .results-table th:nth-child(3),
+  .results-table td:nth-child(3),
+  .results-table th:nth-child(5),
+  .results-table td:nth-child(5) { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <div class="nav-logo-mark">M</div>
+      <div class="nav-logo-text">MCP<span>Guard</span></div>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#scans">Scan Results</a></li>
+      <li><a href="#methodology">Methodology</a></li>
+      <li><a href="#threats">Threat Classes</a></li>
+    </ul>
+    <a class="nav-cta" href="https://github.com/Pranav0718/mcp-trust-eval" target="_blank">View on GitHub</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">AI Agent Security Intelligence</div>
+    <div class="hero-grid">
+      <div class="anim a1">
+        <h1>Secure Every<br>MCP Server<br>You <span class="red">Connect.</span></h1>
+        <p class="hero-desc">MCP servers are the fastest-growing attack surface in AI infrastructure. MCPGuard evaluates any public MCP server across four security dimensions and delivers an actionable trust report before you connect.</p>
+        <div class="hero-actions">
+          <a class="btn-primary" href="#scans">View Live Findings</a>
+          <a class="btn-ghost" href="https://github.com/Pranav0718/mcp-trust-eval" target="_blank">GitHub Repository</a>
+        </div>
+      </div>
+      <div class="hero-stats-card anim a2">
+        <div class="stats-card-header">Latest Scan Batch — May 2026</div>
+        <div class="stats-rows">
+          <div class="stat-row">
+            <span class="stat-row-label">Servers evaluated</span>
+            <span class="stat-row-val v-blue">5</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">Critical findings</span>
+            <span class="stat-row-val v-red">9</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">CVEs detected</span>
+            <span class="stat-row-val v-orange">8</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">Hardcoded secrets</span>
+            <span class="stat-row-val v-red">2</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">High risk servers</span>
+            <span class="stat-row-val v-red">1</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">Low risk servers</span>
+            <span class="stat-row-val v-green">1</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OVERVIEW -->
+<section class="section" id="overview">
+  <div class="section-inner">
+    <div class="section-header anim a1">
+      <div class="section-label">Overview</div>
+      <h2>Scan Metrics</h2>
+    </div>
+    <div class="metrics-strip anim a2">
+      <div class="metric-cell danger">
+        <div class="metric-label">Critical Findings</div>
+        <div class="metric-val v-red">9</div>
+        <div class="metric-sub">Across all 5 servers</div>
+      </div>
+      <div class="metric-cell danger">
+        <div class="metric-label">Hardcoded Secrets</div>
+        <div class="metric-val v-red">2</div>
+        <div class="metric-sub">In production source code</div>
+      </div>
+      <div class="metric-cell warn">
+        <div class="metric-label">CVEs Detected</div>
+        <div class="metric-val v-yellow">8</div>
+        <div class="metric-sub">Known vulnerabilities in deps</div>
+      </div>
+      <div class="metric-cell danger">
+        <div class="metric-label">High Risk Servers</div>
+        <div class="metric-val v-red">1</div>
+        <div class="metric-sub">Do not connect</div>
+      </div>
+      <div class="metric-cell ok">
+        <div class="metric-label">Lowest Score</div>
+        <div class="metric-val v-red">36</div>
+        <div class="metric-sub">networklytics-mcp</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCAN RESULTS -->
+<section class="section" id="scans">
+  <div class="section-inner">
+    <div class="section-header anim a1">
+      <div class="section-label">Live Results</div>
+      <h2>Evaluated Servers</h2>
+    </div>
+    <div class="anim a2">
+      <table class="results-table" id="results-table">
+        <thead>
+          <tr>
+            <th>Repository</th>
+            <th>Score</th>
+            <th>Verdict</th>
+            <th>Findings</th>
+            <th>Last Updated</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- METHODOLOGY -->
+<section class="section" id="methodology">
+  <div class="section-inner">
+    <div class="section-header anim a1">
+      <div class="section-label">Methodology</div>
+      <h2>Four-Layer Security Analysis</h2>
+    </div>
+    <div class="checks-grid anim a2">
+      <div class="check-tile">
+        <div class="check-tile-bar" style="background:var(--red)"></div>
+        <div class="check-num">01</div>
+        <span class="check-icon">🔑</span>
+        <div class="check-title">Secret Scanning</div>
+        <p class="check-desc">Detects hardcoded API keys, tokens, passwords, and private keys across 12 secret types including AWS, GitHub, OpenAI, Anthropic, and generic credentials. A single exposed credential can compromise your entire agent pipeline.</p>
+      </div>
+      <div class="check-tile">
+        <div class="check-tile-bar" style="background:var(--orange)"></div>
+        <div class="check-num">02</div>
+        <span class="check-icon">📦</span>
+        <div class="check-title">Dependency CVEs</div>
+        <p class="check-desc">Queries the OSV vulnerability database for known CVEs in all Python and npm dependencies. Vulnerable packages in a connected server are a direct attack path into your agent, including the MCP SDK itself.</p>
+      </div>
+      <div class="check-tile">
+        <div class="check-tile-bar" style="background:var(--yellow)"></div>
+        <div class="check-num">03</div>
+        <span class="check-icon">🎯</span>
+        <div class="check-title">Tool Definition Analysis</div>
+        <p class="check-desc">The most MCP-specific check. Scans every tool name, description, and parameter definition for instruction override attempts, data exfiltration patterns, SSRF vectors, role hijacking, and dangerous function usage that could hijack agent behavior.</p>
+      </div>
+      <div class="check-tile">
+        <div class="check-tile-bar" style="background:var(--blue)"></div>
+        <div class="check-num">04</div>
+        <span class="check-icon">🏛</span>
+        <div class="check-title">Trust Signal Analysis</div>
+        <p class="check-desc">Evaluates repository health including maintenance activity, security policy presence, license, community vetting, and archival status. An abandoned or unvetted repository will never receive security patches.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THREAT CLASSES -->
+<section class="section" id="threats">
+  <div class="section-inner">
+    <div class="section-header anim a1">
+      <div class="section-label">Intelligence</div>
+      <h2>MCP Attack Classes Detected</h2>
+    </div>
+    <div class="attacks-grid anim a2">
+      <div class="attack-card">
+        <div class="attack-badge">Critical</div>
+        <div class="attack-title">Tool Poisoning</div>
+        <p class="attack-desc">Hidden instructions embedded in MCP tool descriptions that hijack agent behavior when the tool is invoked. The agent follows the malicious instructions without the user's knowledge, potentially exfiltrating data or executing unauthorized actions.</p>
+      </div>
+      <div class="attack-card">
+        <div class="attack-badge">Critical</div>
+        <div class="attack-title">Confused Deputy</div>
+        <p class="attack-desc">A server that requests permissions beyond its stated purpose and uses them on behalf of a higher-privileged caller. Discovered in production AI agent OAuth 2.0 handshakes, enabling privilege escalation across interconnected SaaS tools.</p>
+      </div>
+      <div class="attack-card">
+        <div class="attack-badge">High</div>
+        <div class="attack-title">Indirect Prompt Injection</div>
+        <p class="attack-desc">Malicious instructions delivered through tool return values rather than direct user input. When an agent calls a tool and receives a poisoned response, the attacker gains control of the agent's next actions without ever interacting with the user.</p>
+      </div>
+      <div class="attack-card">
+        <div class="attack-badge">High</div>
+        <div class="attack-title">DNS Rebinding</div>
+        <p class="attack-desc">Exploits the MCP SDK's default lack of DNS rebinding protection to redirect agent traffic to internal network addresses, potentially reaching cloud metadata endpoints, internal APIs, or other restricted resources.</p>
+      </div>
+      <div class="attack-card">
+        <div class="attack-badge">High</div>
+        <div class="attack-title">Credential Harvesting</div>
+        <p class="attack-desc">Tools designed to extract API keys, tokens, or credentials from the agent's context window or environment. Hardcoded secrets in server source code create immediate exposure vectors for any agent that connects.</p>
+      </div>
+      <div class="attack-card">
+        <div class="attack-badge">Medium</div>
+        <div class="attack-title">Rug Pull Attack</div>
+        <p class="attack-desc">A server that behaves safely during evaluation but silently updates its tool definitions to include malicious instructions after being trusted and connected to a production agent. Abandoned repositories are especially susceptible to this if ownership changes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-logo">MCP<span>Guard</span></div>
+      <div class="footer-meta" style="margin-top:4px">Built by Pranav Walgude — MS Cybersecurity, Northeastern University</div>
+    </div>
+    <div style="text-align:right">
+      <a class="footer-link" href="https://github.com/Pranav0718/mcp-trust-eval" target="_blank" style="display:block;margin-bottom:4px">github.com/Pranav0718/mcp-trust-eval →</a>
+      <div class="footer-meta">Scan data: May 2026</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const SCANS = [
+  {
+    repo: "Leekangbum/networklytics-mcp",
+    url: "https://github.com/Leekangbum/networklytics-mcp",
+    desc: "Python MCP server for network analytics",
+    language: "Python", license: "None", last_push: "Apr 17, 2026",
+    score: 36, verdict: "HIGH RISK", vc: "high",
+    fc: { c: 2, h: 0, m: 3, l: 2 },
+    breakdown: [
+      { label: "Secret Scanning", findings: 2, deduction: 40, pct: 100 },
+      { label: "Dependency CVEs", findings: 0, deduction: 0, pct: 0 },
+      { label: "Tool Analysis", findings: 3, deduction: 15, pct: 60 },
+      { label: "Trust Signals", findings: 3, deduction: 9, pct: 36 }
+    ],
+    findings: [
+      { sev: "c", name: "Hardcoded API Key", detail: "nly_your_api_key_here found in smithery.yaml", file: "smithery.yaml" },
+      { sev: "c", name: "Hardcoded API Key", detail: "API key embedded in server source code", file: "src/networklytics_mcp/server.py" },
+      { sev: "m", name: "Network Calls", detail: "Outbound HTTP calls without input validation", file: "src/networklytics_mcp/server.py" },
+      { sev: "l", name: "No Security Policy", detail: "No responsible disclosure process defined", file: null },
+      { sev: "l", name: "No License", detail: "No license — unclear maintenance commitment", file: null },
+    ],
+    brief: "This server has hardcoded API credentials in the source code — an immediate critical risk. Any agent connecting to it could expose those credentials through the agent context, enabling credential theft via prompt injection. The absence of a license and security policy indicates this is experimental or abandoned with no security maintenance process. Do not connect this server to any agent."
+  },
+  {
+    repo: "gannonh/firebase-mcp",
+    url: "https://github.com/gannonh/firebase-mcp",
+    desc: "Firebase MCP server — 244 stars",
+    language: "TypeScript", license: "MIT", last_push: "Oct 27, 2025",
+    score: 48, verdict: "MEDIUM RISK", vc: "medium",
+    fc: { c: 0, h: 9, m: 18, l: 1 },
+    breakdown: [
+      { label: "Secret Scanning", findings: 0, deduction: 0, pct: 0 },
+      { label: "Dependency CVEs", findings: 6, deduction: 25, pct: 100 },
+      { label: "Tool Analysis", findings: 20, deduction: 25, pct: 100 },
+      { label: "Trust Signals", findings: 1, deduction: 2, pct: 20 }
+    ],
+    findings: [
+      { sev: "h", name: "CVE: MCP SDK Data Leak", detail: "GHSA-345p-7cg4-v4c7 — cross-client data leak via shared transport reuse", file: "package.json" },
+      { sev: "h", name: "CVE: MCP SDK ReDoS", detail: "GHSA-8r9q-7v3j-jr4g — ReDoS vulnerability in MCP TypeScript SDK", file: "package.json" },
+      { sev: "h", name: "CVE: DNS Rebinding", detail: "GHSA-w48q-cv73-mx4w — DNS rebinding protection not enabled by default", file: "package.json" },
+      { sev: "h", name: "CVE: Axios SSRF", detail: "GHSA-3p68-rc4w-qgx5 — NO_PROXY hostname normalization bypass leads to SSRF", file: "package.json" },
+      { sev: "h", name: "CVE: Axios DoS", detail: "GHSA-43fc-jf86-j433 — DoS via __proto__ key in mergeConfig", file: "package.json" },
+      { sev: "h", name: "Prompt Injection — SSRF", detail: "SSRF pattern detected across config and test files", file: "src/config.ts" },
+      { sev: "l", name: "No Security Policy", detail: "No SECURITY.md defined", file: null },
+    ],
+    brief: "This widely-used Firebase server carries three active CVEs in the MCP SDK itself, including a cross-client data leak where transport instance reuse could expose one client's data to another. The Axios SSRF vulnerability allows prompt-injected payloads to redirect outbound requests to internal network addresses. Despite its popularity, it has no security policy and has not been updated since October 2025. Patch the MCP SDK and Axios before connecting to any agent handling sensitive Firebase data."
+  },
+  {
+    repo: "fireproof-storage/mcp-database-server",
+    url: "https://github.com/fireproof-storage/mcp-database-server",
+    desc: "JSON document storage MCP — abandoned 500+ days",
+    language: "JavaScript", license: "Other", last_push: "Dec 19, 2024",
+    score: 63, verdict: "MEDIUM RISK", vc: "medium",
+    fc: { c: 0, h: 3, m: 0, l: 2 },
+    breakdown: [
+      { label: "Secret Scanning", findings: 0, deduction: 0, pct: 0 },
+      { label: "Dependency CVEs", findings: 2, deduction: 20, pct: 80 },
+      { label: "Tool Analysis", findings: 1, deduction: 10, pct: 40 },
+      { label: "Trust Signals", findings: 2, deduction: 7, pct: 70 }
+    ],
+    findings: [
+      { sev: "h", name: "CVE: MCP SDK ReDoS", detail: "GHSA-8r9q-7v3j-jr4g — MCP SDK 0.6.0 ReDoS (CVE-2026-0621)", file: "package.json" },
+      { sev: "h", name: "CVE: DNS Rebinding", detail: "GHSA-w48q-cv73-mx4w — DNS rebinding not enabled by default (CVE-2025-66414)", file: "package.json" },
+      { sev: "h", name: "Dynamic Import", detail: "Dynamic import pattern that could enable code injection", file: "package.json" },
+      { sev: "m", name: "Abandoned Repository", detail: "No commits in 500+ days — security patches will not be applied", file: null },
+      { sev: "l", name: "No Security Policy", detail: "No SECURITY.md found", file: null },
+    ],
+    brief: "This server is effectively abandoned — no commits in over 500 days — while carrying two active CVEs in its MCP SDK version. The DNS rebinding vulnerability means a malicious server could redirect agent traffic to localhost or internal network endpoints. Since there is no maintenance activity, these vulnerabilities will never be patched. Use a maintained alternative for agent document storage."
+  },
+  {
+    repo: "FreePeak/db-mcp-server",
+    url: "https://github.com/FreePeak/db-mcp-server",
+    desc: "Go multi-database MCP server — 372 stars",
+    language: "Go", license: "MIT", last_push: "Apr 19, 2026",
+    score: 73, verdict: "MEDIUM RISK", vc: "medium",
+    fc: { c: 5, h: 7, m: 2, l: 1 },
+    breakdown: [
+      { label: "Secret Scanning", findings: 0, deduction: 0, pct: 0 },
+      { label: "Dependency CVEs", findings: 0, deduction: 0, pct: 0 },
+      { label: "Tool Analysis", findings: 15, deduction: 25, pct: 100 },
+      { label: "Trust Signals", findings: 1, deduction: 2, pct: 20 }
+    ],
+    findings: [
+      { sev: "c", name: "Data Exfiltration Pattern", detail: "3 matches in docker-compose.yml", file: "docker-compose.yml" },
+      { sev: "c", name: "Data Exfiltration Pattern", detail: "Found in CI workflow configuration", file: ".github/workflows/go.yml" },
+      { sev: "c", name: "Data Exfiltration Pattern", detail: "Found in database init scripts", file: "init-scripts/timescaledb/README.md" },
+      { sev: "h", name: "Excessive Scope Claim", detail: "Server claims broader database access than necessary", file: "init-scripts/timescaledb/README.md" },
+      { sev: "h", name: "SSRF Pattern", detail: "SSRF patterns in cursor config and README", file: ".cursor/mcp-example.json" },
+      { sev: "l", name: "No Security Policy", detail: "No SECURITY.md defined", file: null },
+    ],
+    brief: "Despite being a popular actively maintained repo (372 stars), this server shows data exfiltration patterns across multiple Docker Compose files and CI configurations. The excessive scope claim in TimescaleDB documentation suggests the server may request broader database permissions than required — a common confused deputy attack vector. Review all docker-compose files before deploying and restrict database user permissions to the minimum required scope."
+  },
+  {
+    repo: "aywengo/kafka-schema-reg-mcp",
+    url: "https://github.com/aywengo/kafka-schema-reg-mcp",
+    desc: "Kafka Schema Registry MCP — 31 stars, security policy present",
+    language: "Python", license: "MIT", last_push: "Apr 15, 2026",
+    score: 75, verdict: "LOW RISK", vc: "low",
+    fc: { c: 3, h: 18, m: 12, l: 0 },
+    breakdown: [
+      { label: "Secret Scanning", findings: 0, deduction: 0, pct: 0 },
+      { label: "Dependency CVEs", findings: 0, deduction: 0, pct: 0 },
+      { label: "Tool Analysis", findings: 45, deduction: 25, pct: 100 },
+      { label: "Trust Signals", findings: 0, deduction: 0, pct: 0 }
+    ],
+    findings: [
+      { sev: "c", name: "System Prompt Leak", detail: "2 matches detected in batch operations handler", file: "batch_operations.py" },
+      { sev: "c", name: "System Prompt Leak", detail: "Pattern detected in comparison tools", file: "comparison_tools.py" },
+      { sev: "c", name: "System Prompt Leak", detail: "Pattern in Claude Code workspace config", file: ".claude-code/workspace.json" },
+      { sev: "h", name: "SSRF Pattern", detail: "Across multiple config and workflow files", file: ".claude-code/config.json" },
+      { sev: "h", name: "Role Hijacking", detail: "Pattern detected in security policy file", file: "SECURITY.md" },
+      { sev: "h", name: "Dynamic Import", detail: "In Docker security scan workflow", file: ".github/workflows/docker-security-scan.yml" },
+    ],
+    brief: "This is the most trusted server in this batch — no secrets, no CVEs, and has a security policy. However, the CRITICAL system prompt leak patterns in batch_operations.py and comparison_tools.py require manual review before connecting. These patterns could be legitimate tool descriptions that match detection rules, or genuine attempts to extract agent system prompts. The high volume of SSRF patterns across configuration files are likely benign URL references in documentation."
+  }
+];
+
+function sevClass(s) {
+  return { c: 'sev-c', h: 'sev-h', m: 'sev-m', l: 'sev-l' }[s];
+}
+function sevLabel(s) {
+  return { c: 'CRITICAL', h: 'HIGH', m: 'MEDIUM', l: 'LOW' }[s];
+}
+function scoreColor(v) {
+  if (v === 'high') return 'var(--red)';
+  if (v === 'medium') return 'var(--yellow)';
+  return 'var(--green)';
+}
+function fillColor(pct, label) {
+  if (label === 'Secret Scanning' && pct > 0) return 'var(--red)';
+  if (pct > 80) return 'var(--red)';
+  if (pct > 40) return 'var(--yellow)';
+  if (pct > 0) return 'var(--blue)';
+  return 'var(--green)';
+}
+
+let openIdx = null;
+
+function toggleDetail(idx) {
+  const row = document.getElementById(`detail-${idx}`);
+  const btn = document.getElementById(`btn-${idx}`);
+  if (openIdx !== null && openIdx !== idx) {
+    document.getElementById(`detail-${openIdx}`).classList.remove('open');
+    document.getElementById(`btn-${openIdx}`).textContent = 'Details ▾';
+  }
+  const isOpen = row.classList.contains('open');
+  row.classList.toggle('open', !isOpen);
+  btn.textContent = isOpen ? 'Details ▾' : 'Close ▴';
+  openIdx = isOpen ? null : idx;
+}
+
+const tbody = document.getElementById('table-body');
+
+SCANS.forEach((s, i) => {
+  const mfHtml = [
+    s.fc.c > 0 ? `<span class="mf mf-c">${s.fc.c}C</span>` : '',
+    s.fc.h > 0 ? `<span class="mf mf-h">${s.fc.h}H</span>` : '',
+    s.fc.m > 0 ? `<span class="mf mf-m">${s.fc.m}M</span>` : '',
+    s.fc.l > 0 ? `<span class="mf mf-l">${s.fc.l}L</span>` : '',
+  ].join('');
+
+  const findingsHtml = s.findings.map(f => `
+    <tr>
+      <td style="width:90px"><span class="sev-badge ${sevClass(f.sev)}">${sevLabel(f.sev)}</span></td>
+      <td>
+        <div class="finding-name">${f.name}</div>
+        <div class="finding-file">${f.detail}${f.file ? ' &mdash; ' + f.file : ''}</div>
+      </td>
+    </tr>
+  `).join('');
+
+  const bdHtml = s.breakdown.map(b => `
+    <div class="bp-row">
+      <div class="bp-row-top">
+        <span>${b.label}</span>
+        <span>${b.deduction > 0 ? '-' + b.deduction : '✓ Clean'}</span>
+      </div>
+      <div class="bp-bar">
+        <div class="bp-fill" style="width:${b.pct}%; background:${fillColor(b.pct, b.label)}"></div>
+      </div>
+    </div>
+  `).join('');
+
+  tbody.innerHTML += `
+    <tr onclick="toggleDetail(${i})">
+      <td>
+        <a class="repo-name" href="${s.url}" target="_blank" onclick="event.stopPropagation()">${s.repo}</a>
+        <span class="repo-lang">${s.language} &bull; ${s.license}</span>
+      </td>
+      <td><span class="score-cell" style="color:${scoreColor(s.vc)}">${s.score}<span style="font-size:14px;color:var(--muted)">/100</span></span></td>
+      <td><span class="verdict-pill pill-${s.vc}">${s.verdict}</span></td>
+      <td><div class="mini-findings">${mfHtml}</div></td>
+      <td style="color:var(--muted);font-size:13px">${s.last_push}</td>
+      <td><button class="expand-btn" id="btn-${i}" onclick="event.stopPropagation();toggleDetail(${i})">Details ▾</button></td>
+    </tr>
+    <tr class="detail-row" id="detail-${i}">
+      <td colspan="6" style="padding:0">
+        <div class="detail-panel">
+          <div class="detail-grid">
+            <div>
+              <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Findings Detail</div>
+              <table class="findings-table">${findingsHtml}</table>
+            </div>
+            <div>
+              <div class="breakdown-panel">
+                <div class="bp-title">Score Breakdown</div>
+                <div class="bp-rows">${bdHtml}</div>
+                <div class="threat-box">
+                  <div class="threat-box-title">⚠ Security Assessment</div>
+                  <p>${s.brief}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+  `;
+});
+</script>
+</body>
+</html>
